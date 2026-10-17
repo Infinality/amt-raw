@@ -248,6 +248,15 @@ AMT_KINETIC_DECAY_MS=500
 AMT_KINETIC_MAX_MS=1600
 ```
 
+These were manually tested on a 27" 4k monitor at 150% desktop scaling.  Some values that may work better as a starting point on a 200% desktop scale would be:
+
+```ini
+AMT_POINTER_GAIN=1.0
+AMT_POINTER_PRECISION_GAIN=0.55
+AMT_POINTER_PRECISION_SPEED=0.8
+AMT_POINTER_PRECISION_TRANSITION=1.1
+```
+
 ## Pointer motion and resampling
 
 The preferred `interpolated` resampler evaluates pointer motion on an
