@@ -13,6 +13,7 @@ Environment=AMT_POINTER_HYSTERESIS_UNITS=2.0
 Environment=AMT_POINTER_PRECISION_FILTER_MS=35
 Environment=AMT_POINTER_SCROLL_HYSTERESIS_UNITS=2.0
 Environment=AMT_POINTER_SCROLL_START_UNITS=0.0
+Environment=AMT_NATURAL_SCROLL=off
 Environment=AMT_POINTER_TWO_FINGER_TAP_GRACE_MS=120
 Environment=AMT_TOUCHPAD_HYSTERESIS_UNITS=2.0
 Environment=AMT_POINTER_KINETIC_SCROLL=on
@@ -79,6 +80,7 @@ ExecStart=/usr/bin/python3 /usr/local/libexec/amt-raw/amt-raw.py \
  --pointer-tap-drag-activation-units ${AMT_POINTER_TAP_DRAG_ACTIVATION_UNITS} \
  --pointer-tap-drag-hold-ms ${AMT_POINTER_TAP_DRAG_HOLD_MS} \
  --pointer-scroll-units-per-detent ${AMT_POINTER_SCROLL_UNITS_PER_DETENT} \
+ --natural-scroll ${AMT_NATURAL_SCROLL} \
  --pointer-scroll-axis-lock ${AMT_POINTER_SCROLL_AXIS_LOCK} \
  --pointer-scroll-axis-lock-ratio ${AMT_POINTER_SCROLL_AXIS_LOCK_RATIO} \
  --pointer-kinetic-scroll ${AMT_POINTER_KINETIC_SCROLL} \

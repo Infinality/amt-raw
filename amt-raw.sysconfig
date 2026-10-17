@@ -227,11 +227,12 @@ AMT_POINTER_TAP_DRAG_HOLD_MS=120
 AMT_POINTER_THREE_FINGER_TAP=on
 
 # -----------------------------------------------------------------------------
-# Pointer high-resolution scrolling
+# Synthesized high-resolution scrolling
 # -----------------------------------------------------------------------------
-# Two-finger motion is converted to standard REL_WHEEL_HI_RES/
-# REL_HWHEEL_HI_RES events, with legacy wheel-detent crossings emitted for
-# compatibility. Per-finger hysteresis suppresses stationary contact wobble.
+# In pointer mode and touchpad mode's relative scroll companion, two-finger
+# motion is converted to standard REL_WHEEL_HI_RES/REL_HWHEEL_HI_RES events.
+# Legacy detent crossings remain available for compatibility. amt-raw owns the
+# scroll-direction preference whenever it synthesizes these wheel events.
 
 # AMT_POINTER_SCROLL_HYSTERESIS_UNITS: Per-finger deadband before the two
 # contacts are averaged into a scroll centroid.
@@ -247,6 +248,13 @@ AMT_POINTER_SCROLL_START_UNITS=0.0
 # one logical 120-unit wheel detent. Larger values produce slower scrolling.
 # Values: >0 raw units/detent. Typical: 30..150. Default: 66.
 AMT_POINTER_SCROLL_UNITS_PER_DETENT=66
+
+# AMT_NATURAL_SCROLL: Scroll-direction preference for wheel events synthesized
+# by amt-raw in pointer and touchpad modes. "on" makes content follow finger
+# motion on both axes; native mode ignores this setting and uses the desktop's
+# physical-touchpad preference instead.
+# Values: on | off. Default: off (traditional/reverse-wheel scrolling).
+AMT_NATURAL_SCROLL=off
 
 # AMT_POINTER_SCROLL_AXIS_LOCK: Optionally lock an established scroll gesture to
 # its dominant vertical or horizontal axis.

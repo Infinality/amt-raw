@@ -20,6 +20,8 @@ Pointer mode is the main reason to install `amt-raw`.
   evenly paced pointer trajectory from the measured hardware reports.
 - **High-resolution two-finger scrolling** using standard Linux high-resolution
   wheel events, with legacy detent events emitted for compatibility.
+- **Per-trackpad natural-scrolling preference** for amt-raw-generated scrolling,
+  independent of the physical trackpad's native desktop setting.
 - **Configurable kinetic scrolling** so a fast two-finger flick can coast after
   release without application-specific integration.
 - **Configurable overall gain/speed control.**
@@ -162,6 +164,7 @@ AMT_MODE=pointer
 AMT_HARDWARE_REPORT_RATE_HZ=120
 AMT_RESAMPLING_RATE_HZ=120
 AMT_RESAMPLING_PREDICTOR=interpolated
+AMT_NATURAL_SCROLL=off
 ```
 
 Before starting the system daemon, enable **exactly one** desktop helper as the
@@ -191,6 +194,8 @@ Then start the system daemon:
 sudo systemctl enable --now amt-raw.service
 ```
 
+**IMPORTANT NOTE:** For best results, now configure the desktop's handling of AMT Raw Pointer as flat/neutral with 0.0 gain, so the compositor does not add a second acceleration curve.
+
 Useful logs:
 
 ```bash
@@ -207,6 +212,18 @@ The main configuration file is:
 ```text
 /etc/sysconfig/amt-raw
 ```
+
+For synthesized scrolling, `amt-raw` owns the Magic Trackpad's scroll-direction
+preference in `pointer` and `touchpad` modes:
+
+```ini
+AMT_NATURAL_SCROLL=off   # traditional scrolling
+# AMT_NATURAL_SCROLL=on  # content follows finger motion
+```
+
+In `native` mode this setting is ignored; use the desktop environment's normal
+physical-touchpad natural-scrolling setting instead. See **Scroll direction and
+desktop settings** below for the required desktop-side configuration.
 
 After changing it:
 
@@ -360,9 +377,32 @@ Relevant settings:
 AMT_POINTER_SCROLL_HYSTERESIS_UNITS
 AMT_POINTER_SCROLL_START_UNITS
 AMT_POINTER_SCROLL_UNITS_PER_DETENT
+AMT_NATURAL_SCROLL
 AMT_POINTER_SCROLL_AXIS_LOCK
 AMT_POINTER_SCROLL_AXIS_LOCK_RATIO
 ```
+
+## Scroll direction and desktop settings
+
+`amt-raw` uses one clear ownership rule:
+
+> When `amt-raw` synthesizes wheel events, `amt-raw` owns scroll direction.
+> When the physical trackpad is used natively, the desktop owns scroll direction.
+
+This avoids accidental double inversion. `AMT_NATURAL_SCROLL=on` reverses both
+vertical and horizontal synthesized scrolling so content follows finger motion.
+It applies to pointer mode and to the relative scroll/kinetic companion devices
+in touchpad mode. Kinetic scrolling automatically follows the same direction.
+
+| Mode | Scroll producer | Natural-scrolling control |
+| --- | --- | --- |
+| `pointer` | `AMT Raw Pointer` | `AMT_NATURAL_SCROLL` |
+| `touchpad` | `AMT Raw Touchpad Scroll` / `Kinetic` | `AMT_NATURAL_SCROLL` |
+| `native` | physical Magic Trackpad | desktop touchpad setting |
+
+For synthesized modes, the desktop should **not** apply a second natural-scroll
+inversion to the AMT virtual wheel device. The desktop helpers/settings below
+keep that ownership model explicit.
 
 ## Kinetic scrolling
 
@@ -467,6 +507,12 @@ This is important even if pointer motion appears normal without the helper:
 letting KWin consume the physical and virtual streams together can produce
 conflicting scrolling, taps, or other duplicate behavior.
 
+The helper also forces KWin's per-device `naturalScroll` setting **off** for the
+AMT synthetic wheel-producing devices. This prevents KWin from applying a second
+inversion after `AMT_NATURAL_SCROLL`. The physical Magic Trackpad's own KDE
+natural-scrolling preference is left untouched and remains authoritative in
+`native` mode.
+
 The helper requires Qt 6 `qdbus` (`qt6-qttools` on Fedora). A short fast-poll
 window after evdev topology changes minimizes overlap during restart/reconnect;
 steady-state reconciliation is slower and inexpensive.
@@ -496,6 +542,21 @@ systemctl --user status amt-raw-gnome-sync.service
 ```
 
 While pointer mode is active, `send-events` should be `'disabled'`.
+
+GNOME's mouse natural-scrolling setting is global, so the helper does not change
+it automatically. To let `AMT_NATURAL_SCROLL` be the only inversion applied to
+`AMT Raw Pointer`, use neutral mouse scrolling and acceleration in GNOME:
+
+```bash
+gsettings set org.gnome.desktop.peripherals.mouse natural-scroll false
+gsettings set org.gnome.desktop.peripherals.mouse accel-profile 'flat'
+gsettings set org.gnome.desktop.peripherals.mouse speed 0
+```
+
+This affects other mouse-class devices too. If you deliberately keep GNOME's
+mouse `natural-scroll` enabled, remember that it will invert amt-raw's synthetic
+wheel stream a second time. The GNOME touchpad natural-scroll preference remains
+relevant only to the physical trackpad when using native mode.
 
 #### GNOME high-refresh cursor presentation
 
@@ -539,12 +600,18 @@ Because Cinnamon's public setting is global, other Cinnamon-managed touchpads
 are disabled while pointer mode is active, and touchpad mode is intentionally
 unsupported.
 
-For neutral downstream pointer processing:
+For neutral downstream pointer/scroll processing:
 
 ```bash
+gsettings set org.cinnamon.desktop.peripherals.mouse natural-scroll false
 gsettings set org.cinnamon.desktop.peripherals.mouse accel-profile 'flat'
 gsettings set org.cinnamon.desktop.peripherals.mouse speed 0
 ```
+
+Cinnamon's mouse natural-scroll setting is global, so the helper does not change
+it automatically. Keep it `false` if `AMT_NATURAL_SCROLL` should be the sole
+scroll-direction control for `AMT Raw Pointer`. Cinnamon's touchpad natural-scroll
+setting remains relevant to the physical trackpad in native mode.
 
 Useful checks:
 
@@ -567,6 +634,16 @@ systemctl --user status amt-raw-cinnamon-sync.service
 ```
 
 Run only the helper appropriate for the current desktop session.
+
+### Scroll direction is reversed or inverted twice
+
+In pointer/touchpad modes, set the desired Magic Trackpad direction with
+`AMT_NATURAL_SCROLL`. On GNOME/Cinnamon, also confirm the global **mouse**
+`natural-scroll` setting is `false`; otherwise the desktop may invert the
+synthetic wheel stream again. KDE is reconciled per-device by its helper.
+
+In native mode, `AMT_NATURAL_SCROLL` is ignored and the desktop's ordinary
+**touchpad** natural-scrolling preference owns the physical device.
 
 ### KDE helper reports missing qdbus
 

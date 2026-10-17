@@ -95,10 +95,14 @@ def build_parser():
     p.add_argument("--pointer-scroll-start-units", type=float, default=0.0,
                    help="Optional additional filtered-centroid travel before scrolling starts; accumulated motion is replayed (0 recommended)")
     p.add_argument("--pointer-scroll-units-per-detent", type=float, default=66.0)
-    p.add_argument("--pointer-scroll-invert", action="store_true")
+    p.add_argument("--natural-scroll", choices=("on", "off"), default="off",
+                   help="Reverse both synthesized scroll axes so content follows finger motion (pointer/touchpad modes)")
+    # Legacy low-level axis-specific switches retained for direct-CLI compatibility.
+    # The supported end-user setting is --natural-scroll.
+    p.add_argument("--pointer-scroll-invert", action="store_true", help=argparse.SUPPRESS)
     p.add_argument("--pointer-horizontal-scroll", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--pointer-hscroll-units-per-detent", type=float, default=66.0)
-    p.add_argument("--pointer-hscroll-invert", action="store_true")
+    p.add_argument("--pointer-hscroll-invert", action="store_true", help=argparse.SUPPRESS)
     p.add_argument("--pointer-scroll-axis-lock", choices=("on", "off"), default="off")
     p.add_argument("--pointer-scroll-axis-lock-ratio", type=float, default=1.5)
     p.add_argument("--pointer-multitouch-entry-grace-ms", type=float, default=50.0)
@@ -207,6 +211,14 @@ def main():
     a.touchpad_kinetic_scroll = a.touchpad_kinetic_scroll == "on"
     a.pointer_three_finger_tap = a.pointer_three_finger_tap == "on"
     a.liftoff_jitter_suppression = a.liftoff_jitter_suppression == "on"
+    a.natural_scroll = a.natural_scroll == "on"
+
+    # amt-raw owns scroll direction whenever it synthesizes wheel events.
+    # Natural scrolling is a single user preference and reverses both axes.
+    # Keep the legacy axis-specific CLI flags as additive compatibility knobs.
+    if a.natural_scroll:
+        a.pointer_scroll_invert = True
+        a.pointer_hscroll_invert = True
 
     # Pointer engine retains its historical numeric attribute names internally;
     # map the shared kinetic physics onto them so pointer behavior remains

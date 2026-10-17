@@ -175,6 +175,17 @@ class Synchronizer:
                 except RuntimeError as exc:
                     LOG.warning("Unable to reconcile KWin %s on %s: %s", prop, path, exc)
 
+    def _ensure_synthetic_natural_scroll_disabled(self, paths: Iterable[str]) -> None:
+        """Keep KWin from applying a second scroll-direction inversion."""
+        for path in paths:
+            try:
+                current = self.qdbus.get(path, "naturalScroll").strip().lower()
+                if current not in ("false", "0"):
+                    self.qdbus.set_bool_property(path, "naturalScroll", False)
+                    LOG.info("KWin naturalScroll disabled: %s", self.qdbus.name(path))
+            except RuntimeError as exc:
+                LOG.warning("Unable to reconcile KWin naturalScroll on %s: %s", path, exc)
+
     def sync_once(self) -> None:
         groups = self._named_paths()
         physical = groups[PHYSICAL_NAME]
@@ -214,6 +225,9 @@ class Synchronizer:
         # is running and produce duplicate scroll streams.
         if mode == "touchpad":
             self._ensure_touchpad_native_scroll_disabled(touchpads)
+            self._ensure_synthetic_natural_scroll_disabled(scroll + kinetic)
+        elif mode == "pointer":
+            self._ensure_synthetic_natural_scroll_disabled(pointers)
 
         summary = (
             mode,

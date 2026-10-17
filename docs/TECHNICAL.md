@@ -442,6 +442,42 @@ fractional v120 accumulator
       +----> REL_WHEEL when +/-120 boundary is crossed
 ```
 
+## Scroll-direction ownership
+
+Scroll direction is deliberately owned by exactly one layer. When amt-raw emits
+relative wheel events, `AMT_NATURAL_SCROLL` controls both vertical and horizontal
+direction before high-resolution integerization and before kinetic velocity is
+recorded. The kinetic coast therefore inherits the same sign automatically.
+
+Conceptually:
+
+```text
+physical two-finger delta
+        |
+        v
+centroid / hysteresis / axis arbitration
+        |
+        v
+traditional wheel sign
+        |
+        +---- AMT_NATURAL_SCROLL=on ----> reverse both axes
+        |
+        v
+high-resolution wheel output + kinetic history
+```
+
+This applies in pointer mode and to the `AMT Raw Touchpad Scroll` / `Kinetic`
+companions in touchpad mode. It does not apply in native mode because no wheel
+stream is synthesized there.
+
+Desktop-side inversion is kept neutral for synthetic devices whenever the
+public desktop API permits that. KDE's helper can set per-device
+`naturalScroll=false` on the AMT wheel-producing devices while leaving the
+physical trackpad untouched. GNOME and Cinnamon expose mouse natural scrolling
+through a global setting, so their helpers intentionally do not rewrite it; the
+README instructs users to keep that global mouse inversion disabled if
+`AMT_NATURAL_SCROLL` should be authoritative.
+
 ## Kinetic scrolling
 
 During live scrolling, recent signed raw displacement is recorded in a bounded
@@ -525,6 +561,11 @@ For touchpad mode the helper also disables KWin/libinput native two-finger/edge
 scrolling on `AMT Raw Touchpad`, because live scrolling is owned by the separate
 `AMT Raw Touchpad Scroll` device.
 
+For every synthetic AMT device that actually emits wheel events, the helper also
+reconciles KWin's `naturalScroll` property to `false`. This prevents the
+compositor from applying a second direction inversion after amt-raw has already
+applied `AMT_NATURAL_SCROLL`. The physical device's property is never changed.
+
 ### GNOME and Cinnamon
 
 Their public settings expose touchpad `send-events` as a global logical-touchpad
@@ -547,6 +588,12 @@ Because the setting is global, other desktop-managed touchpads are also disabled
 while pointer mode is active. Pretending this can safely route touchpad mode
 would disable `AMT Raw Touchpad` too, so that combination is explicitly left
 unsupported.
+
+Their mouse natural-scrolling preferences are global too. The helpers therefore
+do not alter them: doing so would unexpectedly change unrelated mice. In
+pointer mode, users who want amt-raw to own scroll direction should keep the
+desktop's global mouse natural-scroll inversion disabled and set their Magic
+Trackpad preference with `AMT_NATURAL_SCROLL`.
 
 ## Source tree
 
