@@ -1,0 +1,297 @@
+# amt-raw configuration
+#
+# Apple Magic Trackpad USB-C (05ac:0324) userspace bridge.
+# Edit this file, then restart the system service:
+#
+#   sudo systemctl restart amt-raw.service
+#
+# Values marked "typical" are practical tuning ranges, not hard limits unless
+# an explicit allowed range is stated. Defaults are the hardware-tested values.
+
+# -----------------------------------------------------------------------------
+# Core mode, device, and logging
+# -----------------------------------------------------------------------------
+# Pointer mode is the primary amt-raw experience. Touchpad mode exposes an
+# enhanced virtual multitouch touchpad, while native mode leaves the stock
+# physical device authoritative and is mainly useful as a fallback/baseline.
+
+# AMT_MODE: Select the active backend.
+# Values: pointer | touchpad | native. Default/recommended: pointer.
+AMT_MODE=pointer
+
+# AMT_DEVICE: Physical evdev source. "auto" selects the USB-C Magic Trackpad
+# interface used for multitouch; an explicit /dev/input/eventN path may be used.
+# Values: auto | /dev/input/eventN. Recommended: auto.
+AMT_DEVICE=auto
+
+# AMT_HARDWARE_REPORT_RATE_HZ: Request the hardware report rate during device
+# initialization/reconnect. The device tops out around 110 Hz in practice even
+# when 120 is requested; all runtime timing uses measured report timestamps.
+# Values: 0 leaves firmware unchanged, or about 15.1..3850. Typical: 60..120.
+# Recommended: 120.
+AMT_HARDWARE_REPORT_RATE_HZ=120
+
+# AMT_RESAMPLING_RATE_HZ: Pointer-mode output rate. The pointer trajectory is
+# evaluated on an independent clock at this rate; 0 disables resampling.
+# Values: 0..1000 Hz. Typical: 60, 120, 144, 165, 240. Recommended: 120.
+AMT_RESAMPLING_RATE_HZ=120
+
+# AMT_RESAMPLING_PREDICTOR: Pointer resampling strategy. "interpolated" is the
+# preferred smooth mode; "latest" and "adaptive" are lower-latency causal modes.
+# Values: interpolated | latest | adaptive. Recommended: interpolated.
+AMT_RESAMPLING_PREDICTOR=interpolated
+
+# AMT_RECONNECT_DELAY_SECONDS: Delay before reopening the trackpad after the
+# event stream disappears or a session fails.
+# Values: >0 seconds. Typical: 1..5. Default: 2.
+AMT_RECONNECT_DELAY_SECONDS=2
+
+# AMT_LOG_LEVEL: Journal verbosity for the system daemon.
+# Values: warning | info | debug. Default: warning.
+AMT_LOG_LEVEL=warning
+
+# -----------------------------------------------------------------------------
+# Physical click and optional bottom button areas
+# -----------------------------------------------------------------------------
+# The trackpad's force/clickpad press is independent of tap-to-click. Optional
+# bottom button areas reserve contacts that start in a bottom strip so they can
+# act as left/middle/right buttons without also moving the pointer.
+
+# AMT_PHYSICAL_CLICK: Forward the trackpad's hardware BTN_LEFT press/release.
+# Values: on | off. Default: on.
+AMT_PHYSICAL_CLICK=on
+
+# AMT_BUTTON_AREAS: Enable equal left/middle/right zones across the bottom strip.
+# Values: on | off. Default: off.
+AMT_BUTTON_AREAS=off
+
+# AMT_BUTTON_AREA_HEIGHT_MM: Height of the bottom button strip.
+# Values: >0 mm. Typical: 10..30. Default: 20.
+AMT_BUTTON_AREA_HEIGHT_MM=20
+
+# AMT_PHYSICAL_CLICK_RELEASE_PRESSURE: Pressure-based button-up fallback for a
+# latched physical-click button-area contact. -1 disables this fallback.
+# Values: -1 or >=0 raw pressure units. Typical: 10..60. Default: 30.
+AMT_PHYSICAL_CLICK_RELEASE_PRESSURE=30
+
+# AMT_PHYSICAL_CLICK_RELEASE_DEBOUNCE_FRAMES: Consecutive low-pressure reports
+# required before the pressure-based release fallback emits button-up.
+# Values: >=1 frames. Typical: 1..4. Default: 2.
+AMT_PHYSICAL_CLICK_RELEASE_DEBOUNCE_FRAMES=2
+
+# -----------------------------------------------------------------------------
+# Touchpad-mode coordinate stabilization
+# -----------------------------------------------------------------------------
+# Touchpad mode forwards physical multitouch contacts through a virtual absolute
+# device. A small per-contact deadband suppresses stationary coordinate wobble.
+
+# AMT_TOUCHPAD_HYSTERESIS_UNITS: Per-contact absolute-coordinate deadband.
+# Values: >=0 raw units; 0 disables. Typical: 0..5. Default: 2.0.
+AMT_TOUCHPAD_HYSTERESIS_UNITS=2.0
+
+# -----------------------------------------------------------------------------
+# Pointer motion and precision control
+# -----------------------------------------------------------------------------
+# Pointer mode converts absolute finger motion into a relative pointer. Gain
+# controls normal speed; the precision curve lowers effective gain at slow speed
+# and transitions smoothly back to normal gain as finger speed increases.
+
+# AMT_POINTER_GAIN: Normal/high-speed pointer gain.
+# Values: >0. Typical: 0.5..3.0. Default: 1.35.
+AMT_POINTER_GAIN=1.35
+
+# AMT_POINTER_HYSTERESIS_UNITS: One-finger stationary-coordinate deadband.
+# Values: >=0 raw units; 0 disables. Typical: 0..5. Default: 2.0.
+AMT_POINTER_HYSTERESIS_UNITS=2.0
+
+# AMT_POINTER_PRECISION_GAIN: Fraction of normal gain used at the lowest speeds.
+# Values: >0..1.0. Typical: 0.3..0.8. Default: 0.55.
+AMT_POINTER_PRECISION_GAIN=0.55
+
+# AMT_POINTER_PRECISION_SPEED: Raw finger speed at/below which full precision
+# gain applies.
+# Values: >=0 raw units/ms. Typical: 0.3..1.5. Default: 0.8.
+AMT_POINTER_PRECISION_SPEED=0.8
+
+# AMT_POINTER_PRECISION_TRANSITION: Raw speed at which gain has transitioned
+# fully back to AMT_POINTER_GAIN. Must exceed AMT_POINTER_PRECISION_SPEED.
+# Values: > precision speed. Typical: 1.0..3.0. Default: 1.5.
+AMT_POINTER_PRECISION_TRANSITION=1.5
+
+# AMT_POINTER_PRECISION_FILTER_MS: Time constant used only for the speed estimate
+# that drives the precision curve; it does not smooth pointer position.
+# Values: >=0 ms; 0 disables speed filtering. Typical: 10..80. Default: 35.
+AMT_POINTER_PRECISION_FILTER_MS=35
+
+# -----------------------------------------------------------------------------
+# Lift-off jitter suppression
+# -----------------------------------------------------------------------------
+# Some contacts report a small coordinate slip as pressure collapses at finger
+# release. This filter freezes only a low/falling-pressure release candidate in
+# the precision/stillness regime; ordinary active motion remains untouched.
+
+# AMT_LIFTOFF_JITTER_SUPPRESSION: Enable release-slip suppression.
+# Values: on | off. Default: on.
+AMT_LIFTOFF_JITTER_SUPPRESSION=on
+
+# AMT_LIFTOFF_PRESSURE_THRESHOLD: Low-pressure ceiling used when recognizing a
+# falling-pressure release candidate.
+# Values: >=0 raw pressure units. Typical: 4..16. Default: 8.
+AMT_LIFTOFF_PRESSURE_THRESHOLD=8
+
+# AMT_LIFTOFF_FALL_FRAMES: Required consecutive falling-pressure reports.
+# Values: >=2 frames. Typical: 2..5. Default: 3.
+AMT_LIFTOFF_FALL_FRAMES=3
+
+# AMT_LIFTOFF_PRESSURE_DROP: Minimum total pressure decrease across the falling
+# sequence before coordinates may be frozen.
+# Values: >=0 raw pressure units. Typical: 2..12. Default: 4.
+AMT_LIFTOFF_PRESSURE_DROP=4
+
+# AMT_LIFTOFF_RECOVERY_PRESSURE: Pressure rebound that cancels a release
+# candidate and resumes the same contact without a catch-up cursor jump.
+# Values: >=0 raw pressure units; normally above the threshold. Default: 10.
+AMT_LIFTOFF_RECOVERY_PRESSURE=10
+
+# AMT_LIFTOFF_RECOVERY_TIMEOUT_MS: Maximum time a still-present tracking ID may
+# remain frozen before the release candidate is cancelled.
+# Values: >0 ms. Typical: 40..150. Default: 80.
+AMT_LIFTOFF_RECOVERY_TIMEOUT_MS=80
+
+# AMT_LIFTOFF_MOTION_WINDOW_MS: Recent raw-motion window used to decide whether
+# the finger is in a precision/stillness release regime.
+# Values: >0 ms. Typical: 20..100. Default: 45.
+AMT_LIFTOFF_MOTION_WINDOW_MS=45
+
+# AMT_LIFTOFF_MAX_PATH_SPEED: Maximum recent path speed at which lift-off
+# suppression may engage; faster motion bypasses suppression.
+# Values: >=0 raw units/ms. Typical: 0.3..1.5. Default: 0.8.
+AMT_LIFTOFF_MAX_PATH_SPEED=0.8
+
+# -----------------------------------------------------------------------------
+# Pointer tap, double-tap, and tap-and-drag
+# -----------------------------------------------------------------------------
+# A short entry grace hides fingertip landing/settling from pointer motion. Tap
+# qualification then uses a tighter settled-motion threshold and the physical
+# report clock. A valid first tap briefly holds BTN_LEFT so a retouch can become
+# either a second click or a drag without delaying the initial press.
+
+# AMT_POINTER_MULTITOUCH_ENTRY_GRACE_MS: Initial one-finger landing grace and
+# one-to-multitouch transition window.
+# Values: >=0 ms. Typical: 20..100. Default: 50.
+AMT_POINTER_MULTITOUCH_ENTRY_GRACE_MS=50
+
+# AMT_POINTER_TWO_FINGER_TAP_GRACE_MS: Initial two-finger tap-vs-scroll landing
+# window. Small landing motion is held; decisive motion starts scrolling early.
+# Values: >=0 ms. Typical: 60..200. Default: 120.
+AMT_POINTER_TWO_FINGER_TAP_GRACE_MS=120
+
+# AMT_POINTER_MULTITOUCH_EXIT_GRACE_MS: Delay used when contacts leave a
+# multitouch session before handing a surviving finger back to pointer motion.
+# Values: >=0 ms. Typical: 40..150. Default: 80.
+AMT_POINTER_MULTITOUCH_EXIT_GRACE_MS=80
+
+# AMT_POINTER_TAP_MAX_MS: Maximum physical active-contact duration for a tap.
+# Values: >0 ms. Typical: 150..500. Default: 300.
+AMT_POINTER_TAP_MAX_MS=300
+
+# AMT_POINTER_TAP_MOVE_UNITS: Maximum settled one-finger movement for tap
+# qualification after landing grace has re-centered the tap anchor.
+# Values: >0 raw units. Typical: 40..150. Default: 83.
+AMT_POINTER_TAP_MOVE_UNITS=83
+
+# AMT_POINTER_TAP_LANDING_MOVE_UNITS: Larger raw movement allowed only when a
+# very short contact ends before landing grace can re-center the tap anchor.
+# Values: >0 raw units. Typical: 500..3000. Default: 2000.
+AMT_POINTER_TAP_LANDING_MOVE_UNITS=2000
+
+# AMT_POINTER_TAP_DRAG_WINDOW_MS: Time after a tap during which a retouch may
+# become either a second click or tap-and-drag.
+# Values: >=0 ms; 0 disables the held-release tap-drag window. Typical: 100..300.
+# Default: 180.
+AMT_POINTER_TAP_DRAG_WINDOW_MS=180
+
+# AMT_POINTER_TAP_DRAG_ACTIVATION_UNITS: Retouch movement required to commit to
+# drag instead of treating the retouch as a second tap.
+# Values: >=0 raw units. Typical: 30..120. Default: 60 (~1.3 mm).
+AMT_POINTER_TAP_DRAG_ACTIVATION_UNITS=60
+
+# AMT_POINTER_TAP_DRAG_HOLD_MS: Retouch hold time that commits to drag even when
+# slow movement has not crossed the distance threshold.
+# Values: >=0 ms; 0 disables time-based promotion. Typical: 80..250. Default: 120.
+AMT_POINTER_TAP_DRAG_HOLD_MS=120
+
+# AMT_POINTER_THREE_FINGER_TAP: Emit middle-click for an exactly three-finger
+# tap that stays within normal tap duration/movement limits.
+# Values: on | off. Default: on.
+AMT_POINTER_THREE_FINGER_TAP=on
+
+# -----------------------------------------------------------------------------
+# Pointer high-resolution scrolling
+# -----------------------------------------------------------------------------
+# Two-finger motion is converted to standard REL_WHEEL_HI_RES/
+# REL_HWHEEL_HI_RES events, with legacy wheel-detent crossings emitted for
+# compatibility. Per-finger hysteresis suppresses stationary contact wobble.
+
+# AMT_POINTER_SCROLL_HYSTERESIS_UNITS: Per-finger deadband before the two
+# contacts are averaged into a scroll centroid.
+# Values: >=0 raw units; 0 disables. Typical: 0..5. Default: 2.0.
+AMT_POINTER_SCROLL_HYSTERESIS_UNITS=2.0
+
+# AMT_POINTER_SCROLL_START_UNITS: Optional extra filtered-centroid travel before
+# scrolling starts. Pending motion is accumulated and replayed when it commits.
+# Values: >=0 raw units. Typical/recommended: 0..20. Default: 0.
+AMT_POINTER_SCROLL_START_UNITS=0.0
+
+# AMT_POINTER_SCROLL_UNITS_PER_DETENT: Raw touch displacement corresponding to
+# one logical 120-unit wheel detent. Larger values produce slower scrolling.
+# Values: >0 raw units/detent. Typical: 30..150. Default: 66.
+AMT_POINTER_SCROLL_UNITS_PER_DETENT=66
+
+# AMT_POINTER_SCROLL_AXIS_LOCK: Optionally lock an established scroll gesture to
+# its dominant vertical or horizontal axis.
+# Values: on | off. Default: off.
+AMT_POINTER_SCROLL_AXIS_LOCK=off
+
+# AMT_POINTER_SCROLL_AXIS_LOCK_RATIO: Dominant-axis ratio required to acquire
+# an axis lock when axis locking is enabled.
+# Values: >1.0. Typical: 1.2..3.0. Default: 1.5.
+AMT_POINTER_SCROLL_AXIS_LOCK_RATIO=1.5
+
+# -----------------------------------------------------------------------------
+# Kinetic/coasting scroll
+# -----------------------------------------------------------------------------
+# Pointer mode can continue a fast two-finger flick after release. Touchpad mode
+# can optionally add the same wheel-event coast after native finger scrolling;
+# disable touchpad kinetic scroll if an application already adds its own inertia.
+
+# AMT_POINTER_KINETIC_SCROLL: Enable post-release coast in pointer mode.
+# Values: on | off. Default: on.
+AMT_POINTER_KINETIC_SCROLL=on
+
+# AMT_TOUCHPAD_KINETIC_SCROLL: Enable synthesized post-release wheel coast in
+# touchpad mode.
+# Values: on | off. Default: on.
+AMT_TOUCHPAD_KINETIC_SCROLL=on
+
+# AMT_KINETIC_HISTORY_MS: Recent scroll-motion window used to estimate release
+# velocity.
+# Values: >0 ms. Typical: 30..150. Default: 80.
+AMT_KINETIC_HISTORY_MS=80
+
+# AMT_KINETIC_START_VELOCITY: Minimum release speed that starts a coast.
+# Values: >0 raw units/ms. Typical: 0.3..1.5. Default: 0.58.
+AMT_KINETIC_START_VELOCITY=0.58
+
+# AMT_KINETIC_STOP_VELOCITY: Coast ends when decayed speed falls below this
+# value. Must be lower than AMT_KINETIC_START_VELOCITY.
+# Values: >0 raw units/ms. Typical: 0.01..0.2. Default: 0.05.
+AMT_KINETIC_STOP_VELOCITY=0.05
+
+# AMT_KINETIC_DECAY_MS: Exponential decay time constant for coast velocity.
+# Values: >0 ms. Typical: 200..1000. Default: 500.
+AMT_KINETIC_DECAY_MS=500
+
+# AMT_KINETIC_MAX_MS: Absolute maximum duration of one kinetic coast.
+# Values: >0 ms. Typical: 500..3000. Default: 1600.
+AMT_KINETIC_MAX_MS=1600

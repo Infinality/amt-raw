@@ -1,0 +1,97 @@
+[Unit]
+Description=Apple Magic Trackpad raw userspace bridge
+After=systemd-udevd.service
+Wants=systemd-udevd.service
+
+[Service]
+Type=simple
+# Fallbacks for optional keys omitted from the sysconfig file.
+Environment=AMT_HARDWARE_REPORT_RATE_HZ=120
+Environment=AMT_RESAMPLING_RATE_HZ=120
+Environment=AMT_RESAMPLING_PREDICTOR=interpolated
+Environment=AMT_POINTER_HYSTERESIS_UNITS=2.0
+Environment=AMT_POINTER_PRECISION_FILTER_MS=35
+Environment=AMT_POINTER_SCROLL_HYSTERESIS_UNITS=2.0
+Environment=AMT_POINTER_SCROLL_START_UNITS=0.0
+Environment=AMT_POINTER_TWO_FINGER_TAP_GRACE_MS=120
+Environment=AMT_TOUCHPAD_HYSTERESIS_UNITS=2.0
+Environment=AMT_POINTER_KINETIC_SCROLL=on
+Environment=AMT_TOUCHPAD_KINETIC_SCROLL=on
+Environment=AMT_KINETIC_HISTORY_MS=80
+Environment=AMT_KINETIC_START_VELOCITY=0.58
+Environment=AMT_KINETIC_STOP_VELOCITY=0.05
+Environment=AMT_KINETIC_DECAY_MS=500
+Environment=AMT_KINETIC_MAX_MS=1600
+Environment=AMT_PHYSICAL_CLICK_RELEASE_PRESSURE=30
+Environment=AMT_PHYSICAL_CLICK_RELEASE_DEBOUNCE_FRAMES=2
+Environment=AMT_LIFTOFF_JITTER_SUPPRESSION=on
+Environment=AMT_LIFTOFF_PRESSURE_THRESHOLD=8
+Environment=AMT_LIFTOFF_FALL_FRAMES=3
+Environment=AMT_LIFTOFF_PRESSURE_DROP=4
+Environment=AMT_LIFTOFF_RECOVERY_PRESSURE=10
+Environment=AMT_LIFTOFF_RECOVERY_TIMEOUT_MS=80
+Environment=AMT_LIFTOFF_MOTION_WINDOW_MS=45
+Environment=AMT_LIFTOFF_MAX_PATH_SPEED=0.8
+Environment=AMT_POINTER_TAP_MAX_MS=300
+Environment=AMT_POINTER_TAP_LANDING_MOVE_UNITS=2000
+Environment=AMT_POINTER_TAP_DRAG_ACTIVATION_UNITS=60
+Environment=AMT_POINTER_TAP_DRAG_HOLD_MS=120
+Environment=AMT_POINTER_THREE_FINGER_TAP=on
+EnvironmentFile=/etc/sysconfig/amt-raw
+ExecStart=/usr/bin/python3 /usr/local/libexec/amt-raw/amt-raw.py \
+ --mode ${AMT_MODE} \
+ --device ${AMT_DEVICE} \
+ --hardware-report-rate-hz ${AMT_HARDWARE_REPORT_RATE_HZ} \
+ --resampling-rate-hz ${AMT_RESAMPLING_RATE_HZ} \
+ --resampling-predictor ${AMT_RESAMPLING_PREDICTOR} \
+ --reconnect-delay-seconds ${AMT_RECONNECT_DELAY_SECONDS} \
+ --log-level ${AMT_LOG_LEVEL} \
+ --physical-click ${AMT_PHYSICAL_CLICK} \
+ --button-areas ${AMT_BUTTON_AREAS} \
+ --button-area-height-mm ${AMT_BUTTON_AREA_HEIGHT_MM} \
+ --physical-click-release-pressure ${AMT_PHYSICAL_CLICK_RELEASE_PRESSURE} \
+ --physical-click-release-debounce-frames ${AMT_PHYSICAL_CLICK_RELEASE_DEBOUNCE_FRAMES} \
+ --liftoff-jitter-suppression ${AMT_LIFTOFF_JITTER_SUPPRESSION} \
+ --liftoff-pressure-threshold ${AMT_LIFTOFF_PRESSURE_THRESHOLD} \
+ --liftoff-fall-frames ${AMT_LIFTOFF_FALL_FRAMES} \
+ --liftoff-pressure-drop ${AMT_LIFTOFF_PRESSURE_DROP} \
+ --liftoff-recovery-pressure ${AMT_LIFTOFF_RECOVERY_PRESSURE} \
+ --liftoff-recovery-timeout-ms ${AMT_LIFTOFF_RECOVERY_TIMEOUT_MS} \
+ --liftoff-motion-window-ms ${AMT_LIFTOFF_MOTION_WINDOW_MS} \
+ --liftoff-max-path-speed ${AMT_LIFTOFF_MAX_PATH_SPEED} \
+ --touchpad-hysteresis-units ${AMT_TOUCHPAD_HYSTERESIS_UNITS} \
+ --pointer-gain ${AMT_POINTER_GAIN} \
+ --pointer-hysteresis-units ${AMT_POINTER_HYSTERESIS_UNITS} \
+ --pointer-scroll-hysteresis-units ${AMT_POINTER_SCROLL_HYSTERESIS_UNITS} \
+ --pointer-scroll-start-units ${AMT_POINTER_SCROLL_START_UNITS} \
+ --pointer-precision-gain ${AMT_POINTER_PRECISION_GAIN} \
+ --pointer-precision-speed ${AMT_POINTER_PRECISION_SPEED} \
+ --pointer-precision-transition ${AMT_POINTER_PRECISION_TRANSITION} \
+ --pointer-precision-filter-ms ${AMT_POINTER_PRECISION_FILTER_MS} \
+ --pointer-multitouch-entry-grace-ms ${AMT_POINTER_MULTITOUCH_ENTRY_GRACE_MS} \
+ --pointer-two-finger-tap-grace-ms ${AMT_POINTER_TWO_FINGER_TAP_GRACE_MS} \
+ --pointer-tap-max-ms ${AMT_POINTER_TAP_MAX_MS} \
+ --pointer-three-finger-tap ${AMT_POINTER_THREE_FINGER_TAP} \
+ --pointer-multitouch-exit-grace-ms ${AMT_POINTER_MULTITOUCH_EXIT_GRACE_MS} \
+ --pointer-tap-move-units ${AMT_POINTER_TAP_MOVE_UNITS} \
+ --pointer-tap-landing-move-units ${AMT_POINTER_TAP_LANDING_MOVE_UNITS} \
+ --pointer-tap-drag-window-ms ${AMT_POINTER_TAP_DRAG_WINDOW_MS} \
+ --pointer-tap-drag-activation-units ${AMT_POINTER_TAP_DRAG_ACTIVATION_UNITS} \
+ --pointer-tap-drag-hold-ms ${AMT_POINTER_TAP_DRAG_HOLD_MS} \
+ --pointer-scroll-units-per-detent ${AMT_POINTER_SCROLL_UNITS_PER_DETENT} \
+ --pointer-scroll-axis-lock ${AMT_POINTER_SCROLL_AXIS_LOCK} \
+ --pointer-scroll-axis-lock-ratio ${AMT_POINTER_SCROLL_AXIS_LOCK_RATIO} \
+ --pointer-kinetic-scroll ${AMT_POINTER_KINETIC_SCROLL} \
+ --touchpad-kinetic-scroll ${AMT_TOUCHPAD_KINETIC_SCROLL} \
+ --kinetic-history-ms ${AMT_KINETIC_HISTORY_MS} \
+ --kinetic-start-velocity ${AMT_KINETIC_START_VELOCITY} \
+ --kinetic-stop-velocity ${AMT_KINETIC_STOP_VELOCITY} \
+ --kinetic-decay-ms ${AMT_KINETIC_DECAY_MS} \
+ --kinetic-max-ms ${AMT_KINETIC_MAX_MS}
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=8
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

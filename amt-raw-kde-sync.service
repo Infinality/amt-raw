@@ -1,0 +1,13 @@
+[Unit]
+Description=AMT Raw KWin input-device synchronizer
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/libexec/amt-raw/amt-raw-kde-sync.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

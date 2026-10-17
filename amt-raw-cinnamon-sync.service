@@ -1,0 +1,13 @@
+[Unit]
+Description=AMT Raw Cinnamon input-device synchronizer (pointer mode)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/libexec/amt-raw/amt-raw-cinnamon-sync.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
