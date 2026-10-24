@@ -14,8 +14,10 @@ from .frames import RawFrame, Touch
 
 LOG = logging.getLogger("amt-raw")
 
-APPLE_VENDOR = 0x05AC
+APPLE_USB_VENDOR = 0x05AC
+APPLE_BLUETOOTH_VENDOR = 0x004C
 MAGIC_TRACKPAD_USBC = 0x0324
+BUS_BLUETOOTH = getattr(ecodes, "BUS_BLUETOOTH", 0x05)
 
 
 # Undocumented USB-C Magic Trackpad hardware report-rate feature discovered
@@ -114,15 +116,30 @@ def _candidate_hidraws(event_path: str) -> list[str]:
     return list(dict.fromkeys(exact + siblings))
 
 
-def configure_hardware_report_rate(event_path: str, requested_hz: float) -> bool:
-    """Request a Magic Trackpad hardware report rate through hidraw.
+def configure_hardware_report_rate(
+    event_path: str, requested_hz: float, bustype: Optional[int] = None
+) -> bool:
+    """Request the USB Magic Trackpad hardware report rate through hidraw.
 
-    A value <= 0 disables the feature.  Failure is non-fatal so amt-raw can
+    Bluetooth intentionally skips this USB-specific feature. A value <= 0
+    disables the feature. Failure is non-fatal so amt-raw can
     continue to operate if a kernel/firmware revision does not expose the
     undocumented feature report.
     """
     if requested_hz <= 0:
         LOG.info("Hardware report-rate override disabled")
+        return False
+
+    # Feature 0x99/0xf2 was discovered and validated on the USB transport.
+    # Bluetooth exposes the same normalized evdev MT stream through
+    # hid-magicmouse, but uses different HID reports. Do not send an
+    # undocumented USB feature over Bluetooth; resampling uses measured
+    # report cadence and therefore does not depend on this override.
+    if bustype == BUS_BLUETOOTH:
+        LOG.info(
+            "Hardware report-rate override is USB-only; leaving Bluetooth "
+            "trackpad cadence unchanged (resampling uses measured input timing)"
+        )
         return False
 
     interval = int(round(_REPORT_RATE_CLOCK / requested_hz))
@@ -275,7 +292,10 @@ def _is_magic_trackpad(dev: InputDevice) -> bool:
     # allow source autodetection to consume our own replacement device.
     if (dev.name or "").startswith("AMT Raw "):
         return False
-    if dev.info.vendor != APPLE_VENDOR or dev.info.product != MAGIC_TRACKPAD_USBC:
+    if (
+        dev.info.vendor not in (APPLE_USB_VENDOR, APPLE_BLUETOOTH_VENDOR)
+        or dev.info.product != MAGIC_TRACKPAD_USBC
+    ):
         return False
     caps = dev.capabilities(absinfo=False)
     abs_codes = set(caps.get(ecodes.EV_ABS, []))
@@ -332,7 +352,10 @@ def find_device(explicit_path: Optional[str] = None) -> InputDevice:
             dev.close()
 
     if not candidates:
-        raise RuntimeError("Apple Magic Trackpad USB-C (05ac:0324) multitouch event device not found")
+        raise RuntimeError(
+            "Apple Magic Trackpad USB-C (USB 05ac:0324 or Bluetooth 004c:0324) "
+            "multitouch event device not found"
+        )
 
     candidates.sort(key=lambda item: (item[0], item[1]), reverse=True)
     chosen = candidates[0][2]

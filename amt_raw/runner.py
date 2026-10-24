@@ -16,15 +16,18 @@ def run(args, backend, stop_event):
         try:
             dev = find_device(args.device)
             info = source_info(dev)
-            configure_hardware_report_rate(dev.path, args.hardware_report_rate_hz)
+            configure_hardware_report_rate(
+                dev.path, args.hardware_report_rate_hz, info.bustype
+            )
             session += 1
             LOG.info(
-                "Opened Magic Trackpad session #%d: %s (%s), %dx%d slots=%d, %.1fx%.1f mm",
+                "Opened Magic Trackpad session #%d: %s (%s), %04x:%04x bus=%d slots=%d, %.1fx%.1f mm",
                 session,
                 dev.name,
                 dev.path,
                 info.vendor,
                 info.product,
+                info.bustype,
                 info.max_slots,
                 info.width_mm,
                 info.height_mm,

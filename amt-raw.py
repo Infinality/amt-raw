@@ -20,10 +20,10 @@ def build_parser():
         description="Apple Magic Trackpad userspace bridge (custom pointer, enhanced touchpad, or native baseline)."
     )
     p.add_argument("--mode", choices=("pointer", "touchpad", "native"), default="pointer")
-    p.add_argument("--device", default="auto", help="Explicit physical evdev path, or 'auto' (default) for USB-C Magic Trackpad 05ac:0324 interface 01")
+    p.add_argument("--device", default="auto", help="Explicit physical evdev path, or 'auto' (default) for USB-C Magic Trackpad over USB/Bluetooth")
     p.add_argument("--reconnect-delay-seconds", type=float, default=2.0)
     p.add_argument("--hardware-report-rate-hz", type=float, default=120.0,
-                   help="Request the USB-C Magic Trackpad hardware report rate via feature report 0x99/0xf2 (0 disables; 120 tested)")
+                   help="Request the USB hardware report rate via feature report 0x99/0xf2 (0 disables; ignored on Bluetooth; 120 tested on USB)")
     p.add_argument("--resampling-rate-hz", type=float, default=120.0,
                    help="Pointer-mode fixed-rate REL_X/REL_Y output clock (default 120; 0 disables; e.g. 60, 120, 144, 240)")
     p.add_argument("--resampling-predictor", choices=("latest", "adaptive", "interpolated"), default="interpolated",

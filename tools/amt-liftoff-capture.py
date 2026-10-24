@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 """Capture synchronized amt-raw lift-off/tap calibration traces.
 
-This is a side utility for the Apple Magic Trackpad USB-C (05ac:0324).  It does
+This is a side utility for the Apple Magic Trackpad USB-C over USB or
+Bluetooth. It does
 not grab either evdev device and is intended to run while amt-raw itself is
 active in pointer mode.
 
@@ -52,8 +53,9 @@ except ImportError as exc:  # pragma: no cover - user-facing dependency check
         "python3-evdev is required (Fedora: sudo dnf install python3-evdev)"
     ) from exc
 
-SCRIPT_VERSION = "2.4"
-APPLE_VENDOR = 0x05AC
+SCRIPT_VERSION = "2.5"
+APPLE_USB_VENDOR = 0x05AC
+APPLE_BLUETOOTH_VENDOR = 0x004C
 MAGIC_TRACKPAD_USBC = 0x0324
 POINTER_NAME = "AMT Raw Pointer"
 
@@ -272,11 +274,15 @@ def _magic_trackpad_probe(dev: InputDevice) -> tuple[bool, str]:
 
     vendor = int(dev.info.vendor)
     product = int(dev.info.product)
-    if vendor != APPLE_VENDOR or product != MAGIC_TRACKPAD_USBC:
+    if (
+        vendor not in (APPLE_USB_VENDOR, APPLE_BLUETOOTH_VENDOR)
+        or product != MAGIC_TRACKPAD_USBC
+    ):
         return (
             False,
             f"VID:PID={vendor:04x}:{product:04x} name={name!r} "
-            f"(expected {APPLE_VENDOR:04x}:{MAGIC_TRACKPAD_USBC:04x})",
+            f"(expected USB {APPLE_USB_VENDOR:04x}:{MAGIC_TRACKPAD_USBC:04x} "
+            f"or Bluetooth {APPLE_BLUETOOTH_VENDOR:04x}:{MAGIC_TRACKPAD_USBC:04x})",
         )
 
     try:
@@ -360,7 +366,10 @@ def find_physical(explicit: Optional[str]) -> InputDevice:
             # Only include potentially relevant Apple/AMT rejection details to
             # avoid burying the useful diagnostics in every keyboard/mouse.
             vendor = int(dev.info.vendor)
-            if vendor == APPLE_VENDOR or (dev.name or "").startswith("AMT Raw "):
+            if (
+                vendor in (APPLE_USB_VENDOR, APPLE_BLUETOOTH_VENDOR)
+                or (dev.name or "").startswith("AMT Raw ")
+            ):
                 diagnostics.append(f"event {path}: rejected: {why}")
             dev.close()
     if not candidates:
@@ -374,7 +383,7 @@ def find_physical(explicit: Optional[str]) -> InputDevice:
             evdev_version = "unknown"
         detail = "; ".join(diagnostics) if diagnostics else "no candidate diagnostics available"
         raise RuntimeError(
-            "Apple Magic Trackpad USB-C MT event device not found. "
+            "Apple Magic Trackpad USB-C USB/Bluetooth MT event device not found. "
             f"python={py}; evdev={evdev_version} ({evdev_path}); probes: {detail}"
         )
     candidates.sort(key=lambda x: (x[0], x[1]), reverse=True)

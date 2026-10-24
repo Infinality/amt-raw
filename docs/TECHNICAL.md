@@ -45,7 +45,8 @@ routing helper.
                                       |
 +----------------------+              |
 | Apple Magic Trackpad |--------------+
-| 05ac:0324            |
+| USB 05ac:0324        |
+| BT  004c:0324        |
 +----------+-----------+
            |
            v
@@ -78,8 +79,15 @@ trackpad and the replacement device.
 ## Physical input decoding
 
 Linux `hid-magicmouse` already exposes the USB-C Magic Trackpad as a Type-B
-multitouch evdev device. `amt_raw/source.py` reconstructs slot state and emits a
-`RawFrame` at each `SYN_REPORT`.
+multitouch evdev device on both USB and Bluetooth. The transports use different
+HID report formats internally, but the kernel normalizes them into the same evdev
+slot/position/pressure/orientation/button model before amt-raw sees them.
+`amt_raw/source.py` therefore reconstructs the same slot state and emits the same
+`RawFrame` at each `SYN_REPORT` regardless of transport.
+
+Source discovery accepts USB `05ac:0324` and Bluetooth `004c:0324`. USB discovery
+prefers interface 01 when available; Bluetooth normally exposes one evdev MT
+device and is selected by identity plus required multitouch capabilities.
 
 Conceptually:
 
@@ -108,7 +116,9 @@ Two time domains are intentionally retained:
   timers, and session-level timing.
 
 The configured `AMT_HARDWARE_REPORT_RATE_HZ` is only an initialization request.
-After the hardware is configured, measured report timing is authoritative.
+The undocumented `0x99/0xf2` control is used only on USB; Bluetooth leaves its
+transport cadence untouched. After source initialization, measured report timing
+is authoritative on both transports.
 
 ## Pointer-mode pipeline
 
@@ -513,9 +523,10 @@ pointer finger, becomes a true held button before pointer motion is emitted.
 ## Touchpad mode
 
 Touchpad mode clones accepted multitouch contacts into `AMT Raw Touchpad`. The
-virtual touchpad deliberately uses the real Apple `05ac:0324` identity so
-libinput can apply the same hardware quirks, while source autodetection excludes
-all device names beginning with `AMT Raw` to prevent a feedback loop.
+virtual touchpad deliberately uses the Apple USB `05ac:0324` identity even when
+the physical source is connected over Bluetooth. This keeps libinput quirk
+selection stable across transports, while source autodetection excludes all
+device names beginning with `AMT Raw` to prevent a feedback loop.
 
 The absolute touchpad continues to own normal libinput pointer/tap/gesture
 semantics. Live scrolling is intentionally separated:

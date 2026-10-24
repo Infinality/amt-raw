@@ -19,6 +19,11 @@ PROPS_IFACE = "org.freedesktop.DBus.Properties"
 INPUT_PREFIX = "/org/kde/KWin/InputDevice/event"
 
 PHYSICAL_NAME = "Apple Inc. Magic Trackpad"
+
+
+def is_physical_trackpad_name(name: str) -> bool:
+    """Match kernel-normalized USB/Bluetooth Magic Trackpad names."""
+    return name == PHYSICAL_NAME or name.startswith(PHYSICAL_NAME + " ")
 TOUCHPAD_NAME = "AMT Raw Touchpad"
 POINTER_NAME = "AMT Raw Pointer"
 SCROLL_NAME = "AMT Raw Touchpad Scroll"
@@ -150,7 +155,9 @@ class Synchronizer:
             except RuntimeError as exc:
                 LOG.debug("Unable to read KWin device name for %s: %s", path, exc)
                 continue
-            if name in groups:
+            if is_physical_trackpad_name(name):
+                groups[PHYSICAL_NAME].append(path)
+            elif name in groups:
                 groups[name].append(path)
         return groups
 

@@ -1,7 +1,8 @@
 # amt-raw
 
-`amt-raw` is a Linux userspace input bridge for the **Apple Magic Trackpad USB-C
-(05ac:0324)**. Its primary `pointer` mode replaces the desktop's normal
+`amt-raw` is a Linux userspace input bridge for the **Apple Magic Trackpad USB-C**
+connected over USB or Bluetooth. Its primary `pointer` mode replaces the
+desktop's normal
 trackpad pointer path with a configurable relative pointer designed for smooth,
 precise motion and scrolling while still leaving the physical multitouch device
 available to external gesture applications.
@@ -64,12 +65,21 @@ input path remains authoritative.
 The current implementation targets:
 
 - Apple Magic Trackpad USB-C
-- USB ID `05ac:0324`
+- USB input ID `05ac:0324`
+- Bluetooth input ID `004c:0324`
 - Linux `hid-magicmouse` exposing the active multitouch stream as a Type-B
   multitouch evdev device
 
-Automatic discovery prefers the stable `*-if01-event-mouse` path when present.
-On tested hardware, interface 01 is the active multitouch event stream.
+On USB, automatic discovery prefers the stable `*-if01-event-mouse` path when
+present; interface 01 is the active multitouch event stream on tested hardware.
+On Bluetooth there is normally a single evdev trackpad node, so discovery falls
+back to VID/PID plus multitouch-capability probing. No Bluetooth-specific device
+path needs to be configured.
+
+The undocumented `AMT_HARDWARE_REPORT_RATE_HZ` override is currently **USB-only**.
+When connected over Bluetooth, amt-raw leaves the device's Bluetooth report
+cadence unchanged and the resampler adapts to the cadence actually measured from
+the evdev stream.
 
 The trackpad advertises 16 multitouch slots. `amt-raw` does not impose a
 four-finger limit on the raw physical stream; limitations in external gesture
@@ -194,8 +204,6 @@ Then start the system daemon:
 sudo systemctl enable --now amt-raw.service
 ```
 
-**IMPORTANT NOTE:** For best results, now configure the desktop's handling of AMT Raw Pointer as flat/neutral with 0.0 gain, so the compositor does not add a second acceleration curve.
-
 Useful logs:
 
 ```bash
@@ -246,15 +254,6 @@ AMT_POINTER_PRECISION_TRANSITION=1.5
 AMT_POINTER_SCROLL_UNITS_PER_DETENT=66
 AMT_KINETIC_DECAY_MS=500
 AMT_KINETIC_MAX_MS=1600
-```
-
-These were manually tested on a 27" 4k monitor at 150% desktop scaling.  Some values that may work better as a starting point on a 200% desktop scale would be:
-
-```ini
-AMT_POINTER_GAIN=1.0
-AMT_POINTER_PRECISION_GAIN=0.55
-AMT_POINTER_PRECISION_SPEED=0.8
-AMT_POINTER_PRECISION_TRANSITION=1.1
 ```
 
 ## Pointer motion and resampling
@@ -665,8 +664,12 @@ systemctl --user restart amt-raw-kde-sync.service
 
 ### Hardware requested at 120 Hz but reports near 110 Hz
 
-This is expected on the tested USB-C Magic Trackpad. The request value is not
+This is expected on USB with the tested Magic Trackpad. The request value is not
 used as a runtime timing assumption; measured timestamps drive the resampler.
+
+On Bluetooth, the hardware-rate override is intentionally skipped because the
+validated `0x99/0xf2` control is USB-specific. Resampling still works normally
+and follows the measured Bluetooth report cadence.
 
 ### GNOME cursor looks less even than KDE at the same rate
 

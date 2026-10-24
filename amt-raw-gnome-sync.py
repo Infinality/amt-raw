@@ -25,6 +25,11 @@ VALID_SEND_EVENTS = {
 }
 
 PHYSICAL_NAME = "Apple Inc. Magic Trackpad"
+
+
+def is_physical_trackpad_name(name: str) -> bool:
+    """Match kernel-normalized USB/Bluetooth Magic Trackpad names."""
+    return name == PHYSICAL_NAME or name.startswith(PHYSICAL_NAME + " ")
 TOUCHPAD_NAME = "AMT Raw Touchpad"
 POINTER_NAME = "AMT Raw Pointer"
 SCROLL_NAME = "AMT Raw Touchpad Scroll"
@@ -136,7 +141,6 @@ def scan_topology(event_root: Path) -> Topology:
             names.append(name)
 
     known = {
-        PHYSICAL_NAME,
         TOUCHPAD_NAME,
         POINTER_NAME,
         SCROLL_NAME,
@@ -147,12 +151,13 @@ def scan_topology(event_root: Path) -> Topology:
             name
             for name in names
             if name not in known
+            and not is_physical_trackpad_name(name)
             and ("touchpad" in name.lower() or "trackpad" in name.lower())
         }
     )
 
     return Topology(
-        physical_count=sum(1 for n in names if n == PHYSICAL_NAME),
+        physical_count=sum(1 for n in names if is_physical_trackpad_name(n)),
         pointer_count=sum(1 for n in names if n == POINTER_NAME),
         touchpad_count=sum(1 for n in names if n == TOUCHPAD_NAME),
         scroll_count=sum(1 for n in names if n == SCROLL_NAME),

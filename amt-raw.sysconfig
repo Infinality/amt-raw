@@ -1,6 +1,6 @@
 # amt-raw configuration
 #
-# Apple Magic Trackpad USB-C (05ac:0324) userspace bridge.
+# Apple Magic Trackpad USB-C userspace bridge (USB 05ac:0324 or Bluetooth 004c:0324).
 # Edit this file, then restart the system service:
 #
 #   sudo systemctl restart amt-raw.service
@@ -20,14 +20,15 @@
 AMT_MODE=pointer
 
 # AMT_DEVICE: Physical evdev source. "auto" selects the USB-C Magic Trackpad
-# interface used for multitouch; an explicit /dev/input/eventN path may be used.
+# over USB or Bluetooth; an explicit /dev/input/eventN path may be used.
 # Values: auto | /dev/input/eventN. Recommended: auto.
 AMT_DEVICE=auto
 
-# AMT_HARDWARE_REPORT_RATE_HZ: Request the hardware report rate during device
-# initialization/reconnect. The device tops out around 110 Hz in practice even
-# when 120 is requested; all runtime timing uses measured report timestamps.
-# Values: 0 leaves firmware unchanged, or about 15.1..3850. Typical: 60..120.
+# AMT_HARDWARE_REPORT_RATE_HZ: Request the USB hardware report rate during
+# initialization/reconnect. The tested USB device tops out around 110 Hz in
+# practice even when 120 is requested. Bluetooth ignores this setting; all
+# runtime timing on both transports uses measured report timestamps.
+# Values: 0 leaves USB firmware unchanged, or about 15.1..3850. Typical: 60..120.
 # Recommended: 120.
 AMT_HARDWARE_REPORT_RATE_HZ=120
 
